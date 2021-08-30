@@ -1,0 +1,64 @@
+pipeline{
+    agent any
+    /*
+    agent{
+        label "nodename"
+    }
+    */
+    tools{
+        maven "maven3.8.2"
+    }
+    stages{
+        stage('CheckOut'){
+            steps{
+                git branch: 'development', credentialsId: '0e8e40b5-7cb6-4503-aee6-952d87dc80bb', url: 'https://github.com/pavanireddy24/maven-web-application.git'
+                
+            }
+        }
+        stage('build'){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        stage('SonarQubeReport'){
+            steps{
+                sh "mvn clean sonar:sonar"
+            }
+        }
+        stage('UploadArtifactIntoNexus'){
+        steps{
+            sh "mvn clean deploy"
+        }
+        }
+        stage('DeployingapplicationTomcat'){
+            steps{
+                sshagent(['464904d7-6efc-48a7-b1a1-36019b9eca1b']) {
+                sh "scp -o StricthostkeyChecking=no target/maven-web-application.war ec2-user@15.206.169.164:/opt/apache-tomcat-9.0.52/webapps/"
+            }
+            }
+        }
+    }//stages closing
+    post{
+        always{
+            emailext body: '''build is over 
+
+regards,
+pavanireddy,
+9000''', subject: 'build over ...!!', to: 'pavani.v024@gmail.com'
+        }
+        failure{
+            emailext body: '''build is over -- failure..
+
+regards,
+pavanireddy,
+9000''', subject: 'build over ...!!', to: 'pavani.v024@gmail.com'
+        }
+        success{
+            emailext body: '''build is over--success
+
+regards,
+pavanireddy,
+9000''', subject: 'build over ...!!', to: 'pavani.v024@gmail.com'
+        }
+    }
+}//pipeline closing
