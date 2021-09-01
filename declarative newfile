@@ -1,0 +1,82 @@
+pipeline{
+    agent any
+    /* 
+    agent{
+        label"nodename"
+    }
+    */
+    tools{
+        maven"maven3.8.2"
+    }
+    options{
+        timestamps()
+     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5'))
+    }
+    triggers{
+        //pollSCM
+        //pollSCM('* * * * *')
+        //buildperiodically
+        //cron('* * * * *')
+        //githubwebhook
+        //githubPush()
+    }
+        
+    stages{
+        stage('checkout'){
+            steps{
+                git branch: 'development', credentialsId: '0e8e40b5-7cb6-4503-aee6-952d87dc80bb', url: 'https://github.com/pavani-ec-projects/maven-web-application.git'
+            }
+        }
+        stage('build'){
+        steps{
+            sh "mvn clean package"
+    }
+    
+}
+stage('sonarcode'){
+    steps{
+        sh "mvn clean sonar:sonar"
+    }
+}
+stage('upload artifactory'){
+    steps{
+        sh "mvn clean deploy"
+    }
+}
+stage('deploytomcatserver'){
+    steps{
+        sshagent(['464904d7-6efc-48a7-b1a1-36019b9eca1b']){
+        sh "scp -o  StrictHostKeyChecking=no target/maven-web-application.war ec2-user@13.126.65.156://opt/apache-tomcat-9.0.52/webapps"
+        }
+
+        }
+    }
+    }//stagesclosing
+    post{
+        always{
+    emailext body: '''build is over
+
+regards,
+pavanireddy
+88869235??''', subject: 'Build over ...!!', to: 'pavani.v024@gmail.com'
+            
+        }
+        failure{
+            emailext body: '''build is failure
+
+regards,
+pavanireddy
+88869235??''', subject: 'Build over ...!!', to: 'pavani.v024@gmail.com'
+        }
+    
+    success{
+        emailext body: '''build is success
+
+regards,
+pavanireddy
+88869235??''', subject: 'Build over ...!!', to: 'pavani.v024@gmail.com'
+    }
+}
+        
+    }
+
