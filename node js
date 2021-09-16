@@ -1,0 +1,27 @@
+node {
+    stage('CheckOut Code')
+ {
+     git credentialsId: '0e8e40b5-7cb6-4503-aee6-952d87dc80bb', url: 'https://github.com/pavanireddy24/nodejs-app-mss.git'
+ } 
+ stage('Build')
+ {
+    nodejs(nodeJSInstallationName: 'NodeJS16.8.0'){ 
+     sh "npm install"
+ }
+}
+stage('SonarQubeReportExcution')
+{
+   nodejs(nodeJSInstallationName: 'NodeJS16.8.0'){ 
+     sh "npm run sonar" 
+}
+}
+stage('UploadArtifactRepository')
+{
+        sh "npm publish"
+    }
+    stage('RunTheNodeJSProject')
+    {
+        sh "node app.js"
+    }
+    
+}
